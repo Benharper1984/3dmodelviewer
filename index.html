@@ -477,16 +477,6 @@
                 <h1>3D Model Viewer</h1>
                 <div id="clientInfo" class="client-info"></div>
                 
-                <!-- Model Selection Dropdown -->
-                <div class="model-selector">
-                    <label for="preloadedModels">Choose a model:</label>
-                    <select id="preloadedModels" onchange="loadPreloadedModel(this.value)">
-                        <option value="">-- Select a model --</option>
-                    </select>
-                </div>
-                
-                <div class="divider">OR</div>
-                
                 <div class="file-upload-area" onclick="document.getElementById('fileInput').click()">
                     <div class="upload-icon">📁</div>
                     <div class="upload-text">Upload your own 3D model</div>
@@ -589,7 +579,10 @@
                 document.getElementById('passwordContainer').style.display = 'none';
                 document.getElementById('viewerContainer').style.display = 'block';
                 document.getElementById('clientInfo').textContent = `Welcome, ${clientConfig.name}`;
-                loadClientModels(currentClient);
+                
+                // Auto-load the current-design.glb model
+                autoLoadCurrentDesign(clientConfig);
+                
                 errorDiv.textContent = '';
             } else {
                 errorDiv.textContent = 'Incorrect password. Please try again.';
@@ -597,45 +590,30 @@
             }
         }
 
+        // Auto-load current design model
+        function autoLoadCurrentDesign(clientConfig) {
+            const modelPath = `${clientConfig.modelsPath}current-design.glb`;
+            modelViewer.src = modelPath;
+            
+            // Update model info
+            const modelInfo = document.getElementById('modelInfo');
+            modelInfo.textContent = 'Loaded: Current Design';
+            
+            // Handle loading errors
+            modelViewer.addEventListener('error', function(e) {
+                console.log('Current design model not found, you can upload your own model');
+                document.getElementById('modelInfo').textContent = 'No model loaded - upload your own';
+            }, { once: true });
+        }
+
         // Logout function
         function logout() {
             currentClient = null;
             document.getElementById('passwordInput').value = '';
             document.getElementById('errorMessage').textContent = '';
-            document.getElementById('preloadedModels').innerHTML = '<option value="">-- Select a model --</option>';
             modelViewer.src = '';
             document.getElementById('modelInfo').textContent = 'No model loaded';
             showClientSelection();
-        }
-
-        // Load client-specific models
-        async function loadClientModels(clientId) {
-            const clientConfig = CLIENTS[clientId];
-            const select = document.getElementById('preloadedModels');
-            
-            // Clear existing options
-            select.innerHTML = '<option value="">-- Select a model --</option>';
-            
-            // For now, we'll add placeholder options. In a real implementation,
-            // you'd fetch the actual files from the server
-            try {
-                // Add example models - you'll need to add actual .glb files to these folders
-                const exampleModels = [
-                    { name: 'Version 1', file: 'version-1.glb' },
-                    { name: 'Current Design', file: 'current-design.glb' },
-                    { name: 'Final Version', file: 'final-version.glb' }
-                ];
-
-                exampleModels.forEach(model => {
-                    const option = document.createElement('option');
-                    option.value = `${clientConfig.modelsPath}${model.file}`;
-                    option.textContent = model.name;
-                    select.appendChild(option);
-                });
-                
-            } catch (error) {
-                console.log('Note: Add .glb files to the client folders to see them in the dropdown');
-            }
         }
 
         // Allow Enter key for password submission
@@ -691,9 +669,6 @@
             const modelInfo = document.getElementById('modelInfo');
             modelInfo.textContent = `Loaded: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
 
-            // Clear preloaded model selection
-            document.getElementById('preloadedModels').value = '';
-
             // Clean up previous object URL
             modelViewer.addEventListener('load', function cleanup() {
                 URL.revokeObjectURL(url);
@@ -705,35 +680,6 @@
                 alert('Error loading model. Please check the file format and try again.');
                 console.error('Model loading error:', e);
             });
-        }
-
-        // Load pre-loaded model
-        function loadPreloadedModel(modelPath) {
-            if (!modelPath) {
-                // Clear the model if no selection
-                modelViewer.src = '';
-                document.getElementById('modelInfo').textContent = 'No model loaded';
-                return;
-            }
-            
-            modelViewer.src = modelPath;
-            
-            // Update model info
-            const modelInfo = document.getElementById('modelInfo');
-            const modelName = modelPath.split('/').pop().replace('.glb', '').replace('.gltf', '');
-            const displayName = modelName.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            modelInfo.textContent = `Loaded: ${displayName}`;
-            
-            // Clear file input
-            document.getElementById('fileInput').value = '';
-            
-            // Handle loading errors for preloaded models
-            modelViewer.addEventListener('error', function(e) {
-                alert(`Error loading ${displayName}. The model file may not exist.`);
-                console.error('Model loading error:', e);
-                document.getElementById('preloadedModels').value = '';
-                document.getElementById('modelInfo').textContent = 'No model loaded';
-            }, { once: true });
         }
 
         // Control functions
