@@ -28,7 +28,7 @@ class App {
         );
         
         // Load stored data
-        this.galleryManager.loadStoredData();
+        this.galleryManager.loadStoredScreenshots();
         
         // Setup event listeners
         this.setupEventListeners();

@@ -161,8 +161,7 @@ class ScreenshotCore {
                 0, 0, selection.width, selection.height
             );
             
-            const dataURL = canvas.toDataURL('image/png');
-            this.saveScreenshot(dataURL);
+            this.saveScreenshot(canvas);
             
         } catch (error) {
             this.captureWithHtml2Canvas(selection);
@@ -187,8 +186,7 @@ class ScreenshotCore {
             y: selection.y,
             scale: 1
         }).then(canvas => {
-            const dataURL = canvas.toDataURL('image/png');
-            this.saveScreenshot(dataURL);
+            this.saveScreenshot(canvas);
         }).catch(error => {
             this.createEnhancedModelScreenshot(selection);
         });
@@ -249,14 +247,13 @@ class ScreenshotCore {
         ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
         ctx.setLineDash([]);
         
-        const dataURL = canvas.toDataURL('image/png');
-        this.saveScreenshot(dataURL);
+        this.saveScreenshot(canvas);
     }
 
-    saveScreenshot(dataURL) {
+    saveScreenshot(canvas) {
         const screenshot = {
             id: Date.now(),
-            image: dataURL,
+            canvas: canvas,
             timestamp: new Date().toLocaleString(),
             modelVersion: this.currentModelName,
             createdBy: this.currentUser ? this.currentUser.name : 'Unknown User',

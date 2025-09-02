@@ -516,6 +516,32 @@ model-viewer {
     color: #ccc;
 }
 
+/* Show More Button */
+.show-more-btn {
+    width: 100%;
+    padding: 15px;
+    margin-top: 20px;
+    background: #f8f9fa;
+    border: 2px dashed #667eea;
+    border-radius: 8px;
+    color: #667eea;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.show-more-btn:hover {
+    background: #667eea;
+    color: white;
+    border-color: #5a6fd8;
+}
+
+/* Hidden Screenshot Items */
+.screenshot-item.hidden-screenshot {
+    display: none;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .container {
