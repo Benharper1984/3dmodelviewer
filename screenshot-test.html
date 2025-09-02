@@ -610,17 +610,29 @@
 
         // Screenshot functionality
         function startScreenshot() {
+            console.log('Starting screenshot...');
+            
             if (!modelViewer.src) {
                 alert('Please load a 3D model first!');
                 return;
             }
 
+            console.log('Model is loaded, setting up screenshot overlay...');
+            
             isSelectingArea = true;
             const overlay = document.getElementById('screenshotOverlay');
+            
+            if (!overlay) {
+                console.error('Screenshot overlay not found!');
+                alert('Screenshot overlay not found. Please refresh the page.');
+                return;
+            }
+            
             overlay.style.display = 'block';
+            console.log('Overlay displayed');
             
             // Temporarily disable model controls
-            modelViewer.setAttribute('camera-controls', '');
+            modelViewer.removeAttribute('camera-controls');
             modelViewer.style.pointerEvents = 'none';
             
             setupScreenshotSelection();
@@ -628,20 +640,36 @@
 
         function setupScreenshotSelection() {
             const overlay = document.getElementById('screenshotOverlay');
+            console.log('Setting up screenshot selection on overlay:', overlay);
             
+            // Remove any existing event listeners to avoid duplicates
+            overlay.removeEventListener('mousedown', startSelection);
+            overlay.removeEventListener('mousemove', updateSelection);
+            overlay.removeEventListener('mouseup', endSelection);
+            
+            // Add fresh event listeners
             overlay.addEventListener('mousedown', startSelection);
             overlay.addEventListener('mousemove', updateSelection);
             overlay.addEventListener('mouseup', endSelection);
+            
+            console.log('Event listeners attached to overlay');
         }
 
         function startSelection(e) {
-            if (!isSelectingArea) return;
+            console.log('Starting selection at:', e.clientX, e.clientY);
+            
+            if (!isSelectingArea) {
+                console.log('Not in selection mode');
+                return;
+            }
             
             const rect = e.currentTarget.getBoundingClientRect();
             selectionStart = {
                 x: e.clientX - rect.left,
                 y: e.clientY - rect.top
             };
+            
+            console.log('Selection start point:', selectionStart);
             
             // Create selection box
             selectionBox = document.createElement('div');
@@ -652,6 +680,7 @@
             selectionBox.style.height = '0px';
             
             e.currentTarget.appendChild(selectionBox);
+            console.log('Selection box created and added');
         }
 
         function updateSelection(e) {
@@ -673,10 +702,18 @@
         }
 
         function endSelection(e) {
-            if (!isSelectingArea || !selectionStart || !selectionBox) return;
+            console.log('Ending selection...');
+            
+            if (!isSelectingArea || !selectionStart || !selectionBox) {
+                console.log('Invalid selection state');
+                return;
+            }
             
             const rect = selectionBox.getBoundingClientRect();
             const viewerRect = modelViewer.getBoundingClientRect();
+            
+            console.log('Selection box rect:', rect);
+            console.log('Viewer rect:', viewerRect);
             
             // Calculate relative position within the model viewer
             const selection = {
@@ -685,6 +722,15 @@
                 width: rect.width,
                 height: rect.height
             };
+            
+            console.log('Final selection:', selection);
+            
+            // Ensure minimum size
+            if (selection.width < 10 || selection.height < 10) {
+                alert('Selection too small. Please select a larger area.');
+                cancelScreenshot();
+                return;
+            }
             
             // Take screenshot
             takeScreenshot(selection);
