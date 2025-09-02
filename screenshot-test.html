@@ -611,25 +611,28 @@
         // Screenshot functionality
         function startScreenshot() {
             console.log('Starting screenshot...');
+            alert('🟢 Starting screenshot mode - Console debugging enabled');
             
             if (!modelViewer.src) {
-                alert('Please load a 3D model first!');
+                alert('❌ Please load a 3D model first!');
                 return;
             }
 
             console.log('Model is loaded, setting up screenshot overlay...');
+            alert('🟢 Model loaded, setting up overlay...');
             
             isSelectingArea = true;
             const overlay = document.getElementById('screenshotOverlay');
             
             if (!overlay) {
                 console.error('Screenshot overlay not found!');
-                alert('Screenshot overlay not found. Please refresh the page.');
+                alert('❌ Screenshot overlay not found. Please refresh the page.');
                 return;
             }
             
             overlay.style.display = 'block';
             console.log('Overlay displayed');
+            alert('🟢 Overlay active - Now drag to select an area!');
             
             // Temporarily disable model controls
             modelViewer.removeAttribute('camera-controls');
@@ -703,9 +706,11 @@
 
         function endSelection(e) {
             console.log('Ending selection...');
+            alert('🟡 Selection ended - Processing screenshot...');
             
             if (!isSelectingArea || !selectionStart || !selectionBox) {
                 console.log('Invalid selection state');
+                alert('❌ Invalid selection state');
                 return;
             }
             
@@ -724,10 +729,11 @@
             };
             
             console.log('Final selection:', selection);
+            alert(`🟡 Selection: ${Math.round(selection.width)}x${Math.round(selection.height)}px`);
             
             // Ensure minimum size
             if (selection.width < 10 || selection.height < 10) {
-                alert('Selection too small. Please select a larger area.');
+                alert('❌ Selection too small. Please select a larger area.');
                 cancelScreenshot();
                 return;
             }
@@ -735,8 +741,7 @@
             // Take screenshot
             takeScreenshot(selection);
             
-            // Clean up
-            cancelScreenshot();
+            // Note: cancelScreenshot() will be called after screenshot is saved
         }
 
         function takeScreenshot(selection) {
@@ -764,6 +769,7 @@
 
         function captureModelViewer(selection) {
             console.log('Starting capture with selection:', selection);
+            alert('🟡 Starting capture process...');
             
             // Use the model-viewer's built-in screenshot capability
             const canvas = document.createElement('canvas');
@@ -779,29 +785,56 @@
                 // Try to get screenshot from model-viewer
                 if (modelViewer && typeof modelViewer.toBlob === 'function') {
                     console.log('Using model-viewer.toBlob method...');
+                    alert('🟡 Trying model-viewer capture...');
+                    
+                    // Set a timeout in case toBlob doesn't work
+                    let blobTimeout = setTimeout(() => {
+                        console.log('toBlob timeout - falling back to manual method');
+                        alert('⚠️ Model viewer capture timed out, using fallback...');
+                        createModelViewerScreenshot(canvas, ctx, selection);
+                    }, 3000);
+                    
                     // Use model-viewer's toBlob method if available
                     modelViewer.toBlob(blob => {
+                        clearTimeout(blobTimeout);
                         console.log('Model viewer blob created:', blob);
+                        
+                        if (!blob) {
+                            console.log('Blob is null, using fallback method');
+                            alert('⚠️ Model viewer returned null blob, using fallback...');
+                            createModelViewerScreenshot(canvas, ctx, selection);
+                            return;
+                        }
+                        
+                        alert('🟢 Model viewer captured! Processing...');
                         const reader = new FileReader();
                         reader.onload = function(e) {
                             console.log('Blob converted to data URL');
                             processScreenshotImage(e.target.result, selection);
                         };
+                        reader.onerror = function(e) {
+                            console.log('FileReader error:', e);
+                            alert('⚠️ Error reading blob, using fallback...');
+                            createModelViewerScreenshot(canvas, ctx, selection);
+                        };
                         reader.readAsDataURL(blob);
                     }, 'image/png', 1);
                 } else {
                     console.log('Model viewer toBlob not available, using fallback method...');
+                    alert('🟡 Using fallback method...');
                     // Fallback: create a more realistic screenshot representation
                     createModelViewerScreenshot(canvas, ctx, selection);
                 }
             } catch (error) {
                 console.log('Screenshot capture error:', error, 'using fallback method');
+                alert('🟡 Error occurred, using fallback...');
                 createModelViewerScreenshot(canvas, ctx, selection);
             }
         }
 
         function createModelViewerScreenshot(canvas, ctx, selection) {
             console.log('Creating fallback screenshot...');
+            alert('🟡 Creating fallback screenshot...');
             
             // Create a more realistic model viewer screenshot
             const gradient = ctx.createRadialGradient(
@@ -865,6 +898,7 @@
 
         function saveScreenshot(dataURL) {
             console.log('Saving screenshot, data URL length:', dataURL.length);
+            alert('🟢 Screenshot created! Adding to gallery...');
             
             const screenshot = {
                 id: Date.now(),
@@ -888,6 +922,10 @@
             }
             
             console.log('Screenshot saved successfully!');
+            alert('✅ Screenshot saved successfully! Check the gallery below.');
+            
+            // Clean up the screenshot process
+            cancelScreenshot();
         }
 
         function addScreenshotToGallery(screenshot) {
