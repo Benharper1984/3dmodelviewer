@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Screenshot Feature Test v2.1 - 3D Model Viewer</title>
+    <title>Screenshot Feature Test v2.2 - 3D Model Viewer</title>
     <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -797,81 +798,160 @@
         }
 
         function captureModelViewer(selection) {
-            console.log('=== CAPTURE START - Version 2.1 - DEPLOYMENT FORCED ===');
+            console.log('=== CAPTURE START - Version 2.2 - REAL MODEL CAPTURE ===');
             console.log('Starting capture with selection:', selection);
-            alert('🟡 Starting capture process... (v2.1 - FORCED DEPLOYMENT)');
+            alert('🟡 Capturing actual model content... (v2.2)');
             
-            // Use the model-viewer's built-in screenshot capability
+            // Try to capture the actual model-viewer content
+            try {
+                // Method 1: Try to access the model-viewer's canvas directly
+                const modelViewerCanvas = modelViewer.querySelector('canvas') || 
+                                        modelViewer.shadowRoot?.querySelector('canvas');
+                
+                if (modelViewerCanvas) {
+                    console.log('Found model-viewer canvas, capturing real content');
+                    alert('🟢 Found model canvas! Capturing real content...');
+                    captureRealModelContent(modelViewerCanvas, selection);
+                } else {
+                    console.log('Model-viewer canvas not accessible, trying html2canvas');
+                    alert('🟡 Using html2canvas for better capture...');
+                    captureWithHtml2Canvas(selection);
+                }
+            } catch (error) {
+                console.log('Error accessing model canvas:', error);
+                alert('⚠️ Canvas access blocked, using enhanced fallback...');
+                createEnhancedModelScreenshot(selection);
+            }
+        }
+
+        function captureRealModelContent(sourceCanvas, selection) {
+            console.log('Capturing from real model canvas');
+            
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             
-            // Set canvas size to match selection
             canvas.width = selection.width;
             canvas.height = selection.height;
             
-            console.log('Canvas created with size:', canvas.width, 'x', canvas.height);
-            
-            // Always use fallback method for now since toBlob is unreliable
-            console.log('=== USING DIRECT FALLBACK METHOD (toBlob is unreliable) ===');
-            alert('🟡 Using reliable fallback method... (v2.1 FORCED)');
-            createModelViewerScreenshot(canvas, ctx, selection);
-            return; // Exit early to avoid any other code paths
-            
-            /* 
-            // Keeping toBlob code commented for future debugging
             try {
-                // Try to get screenshot from model-viewer
-                if (modelViewer && typeof modelViewer.toBlob === 'function') {
-                    console.log('Using model-viewer.toBlob method...');
-                    alert('🟡 Trying model-viewer capture...');
-                    
-                    // Set a timeout in case toBlob doesn't work
-                    let blobTimeout = setTimeout(() => {
-                        console.log('toBlob timeout - falling back to manual method');
-                        alert('⚠️ Model viewer capture timed out, using fallback...');
-                        createModelViewerScreenshot(canvas, ctx, selection);
-                    }, 2000); // Reduced timeout
-                    
-                    // Use model-viewer's toBlob method if available
-                    modelViewer.toBlob(blob => {
-                        clearTimeout(blobTimeout);
-                        console.log('Model viewer blob created:', blob);
-                        
-                        if (!blob) {
-                            console.log('Blob is null, using fallback method');
-                            alert('⚠️ Model viewer returned null blob, using fallback...');
-                            createModelViewerScreenshot(canvas, ctx, selection);
-                            return;
-                        }
-                        
-                        alert('🟢 Model viewer captured! Processing...');
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            console.log('Blob converted to data URL');
-                            processScreenshotImage(e.target.result, selection);
-                        };
-                        reader.onerror = function(e) {
-                            console.log('FileReader error:', e);
-                            alert('⚠️ Error reading blob, using fallback...');
-                            createModelViewerScreenshot(canvas, ctx, selection);
-                        };
-                        reader.readAsDataURL(blob);
-                    }, 'image/png', 1);
-                } else {
-                    console.log('Model viewer toBlob not available, using fallback method...');
-                    alert('🟡 Using fallback method...');
-                    // Fallback: create a more realistic screenshot representation
-                    createModelViewerScreenshot(canvas, ctx, selection);
-                }
+                // Draw the selected portion of the model-viewer canvas
+                ctx.drawImage(sourceCanvas, 
+                    selection.x, selection.y, selection.width, selection.height,
+                    0, 0, selection.width, selection.height
+                );
+                
+                const dataURL = canvas.toDataURL('image/png');
+                console.log('Real model content captured successfully');
+                alert('✅ Real model captured! Processing...');
+                saveScreenshot(dataURL);
+                
             } catch (error) {
-                console.log('Screenshot capture error:', error, 'using fallback method');
-                alert('🟡 Error occurred, using fallback...');
-                createModelViewerScreenshot(canvas, ctx, selection);
+                console.log('Canvas draw error (CORS or security):', error);
+                alert('⚠️ Security restriction, trying html2canvas...');
+                captureWithHtml2Canvas(selection);
             }
-            */
         }
 
-        function createModelViewerScreenshot(canvas, ctx, selection) {
+        function captureWithHtml2Canvas(selection) {
+            console.log('Trying html2canvas capture method');
+            
+            if (typeof html2canvas === 'undefined') {
+                console.log('html2canvas not loaded, using enhanced fallback');
+                alert('⚠️ html2canvas not available, using enhanced method...');
+                createEnhancedModelScreenshot(selection);
+                return;
+            }
+            
+            const modelViewerElement = document.getElementById('modelViewer');
+            
+            html2canvas(modelViewerElement, {
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: null,
+                width: selection.width,
+                height: selection.height,
+                x: selection.x,
+                y: selection.y,
+                scale: 1
+            }).then(canvas => {
+                console.log('html2canvas capture successful');
+                alert('✅ html2canvas captured successfully!');
+                const dataURL = canvas.toDataURL('image/png');
+                saveScreenshot(dataURL);
+            }).catch(error => {
+                console.log('html2canvas error:', error);
+                alert('⚠️ html2canvas failed, using enhanced fallback...');
+                createEnhancedModelScreenshot(selection);
+            });
+        }
+
+        function createEnhancedModelScreenshot(selection) {
+            console.log('=== ENHANCED FALLBACK SCREENSHOT v2.2 ===');
+            console.log('Creating enhanced model representation...');
+            alert('🟡 Creating enhanced model representation... (v2.2)');
+            
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = selection.width;
+            canvas.height = selection.height;
+            
+            // Create a more accurate representation
+            const gradient = ctx.createRadialGradient(
+                canvas.width / 2, canvas.height / 2, 0,
+                canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) / 2
+            );
+            gradient.addColorStop(0, '#f8f9fa');
+            gradient.addColorStop(0.7, '#e9ecef');
+            gradient.addColorStop(1, '#dee2e6');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Add "MODEL CONTENT NOT ACCESSIBLE" notice
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+            ctx.fillRect(10, 10, canvas.width - 20, 70);
+            
+            ctx.fillStyle = '#dc3545';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('⚠️ MODEL VIEWER CONTENT PROTECTED', canvas.width / 2, 35);
+            
+            ctx.fillStyle = '#666';
+            ctx.font = '12px Arial';
+            ctx.fillText('Browser security prevents direct model capture', canvas.width / 2, 50);
+            ctx.fillText('This represents the selected area of your 3D model', canvas.width / 2, 65);
+            
+            // Add model info overlay at bottom
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+            ctx.fillRect(10, canvas.height - 80, canvas.width - 20, 70);
+            
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText('📸 Screenshot Area Selected', 20, canvas.height - 55);
+            
+            ctx.font = '12px Arial';
+            ctx.fillStyle = '#666';
+            ctx.fillText(`Model: ${currentModelName}`, 20, canvas.height - 35);
+            ctx.fillText(`Selected Area: ${canvas.width}×${canvas.height}px`, 20, canvas.height - 20);
+            ctx.fillText(`Time: ${new Date().toLocaleTimeString()}`, 20, canvas.height - 5);
+            
+            // Add selection border
+            ctx.strokeStyle = '#007bff';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([8, 4]);
+            ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
+            ctx.setLineDash([]);
+            
+            console.log('Enhanced fallback screenshot created');
+            
+            const dataURL = canvas.toDataURL('image/png');
+            console.log('Enhanced screenshot data URL created, length:', dataURL.length);
+            saveScreenshot(dataURL);
+        }
+
+        function createModelViewerScreenshot_OLD(canvas, ctx, selection) {
             console.log('=== FALLBACK SCREENSHOT v2.1 - FORCED DEPLOYMENT ===');
             console.log('Creating fallback screenshot...');
             alert('🟡 Creating screenshot representation... (v2.1 FORCED)');
