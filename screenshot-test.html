@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Screenshot Feature Test v2.2 - 3D Model Viewer</title>
+    <title>Screenshot Feature Test v2.3 - 3D Model Viewer</title>
     <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
@@ -608,7 +608,6 @@
             
             // Handle loading errors
             modelViewer.addEventListener('error', function(e) {
-                console.log('Current design model not found');
                 document.getElementById('modelInfo').textContent = 'Current design model not available';
                 modelNameDisplay.textContent = 'Model not found';
                 currentModelName = 'model-not-found';
@@ -640,29 +639,20 @@
 
         // Screenshot functionality
         function startScreenshot() {
-            console.log('Starting screenshot...');
-            alert('🟢 Starting screenshot mode - Console debugging enabled');
-            
             if (!modelViewer.src) {
-                alert('❌ Please load a 3D model first!');
+                alert('Please load a 3D model first!');
                 return;
             }
-
-            console.log('Model is loaded, setting up screenshot overlay...');
-            alert('🟢 Model loaded, setting up overlay...');
             
             isSelectingArea = true;
             const overlay = document.getElementById('screenshotOverlay');
             
             if (!overlay) {
-                console.error('Screenshot overlay not found!');
-                alert('❌ Screenshot overlay not found. Please refresh the page.');
+                alert('Screenshot overlay not found. Please refresh the page.');
                 return;
             }
             
             overlay.style.display = 'block';
-            console.log('Overlay displayed');
-            alert('🟢 Overlay active - Now drag to select an area!');
             
             // Temporarily disable model controls
             modelViewer.removeAttribute('camera-controls');
@@ -673,7 +663,6 @@
 
         function setupScreenshotSelection() {
             const overlay = document.getElementById('screenshotOverlay');
-            console.log('Setting up screenshot selection on overlay:', overlay);
             
             // Remove any existing event listeners to avoid duplicates
             overlay.removeEventListener('mousedown', startSelection);
@@ -684,25 +673,16 @@
             overlay.addEventListener('mousedown', startSelection);
             overlay.addEventListener('mousemove', updateSelection);
             overlay.addEventListener('mouseup', endSelection);
-            
-            console.log('Event listeners attached to overlay');
         }
 
         function startSelection(e) {
-            console.log('Starting selection at:', e.clientX, e.clientY);
-            
-            if (!isSelectingArea) {
-                console.log('Not in selection mode');
-                return;
-            }
+            if (!isSelectingArea) return;
             
             const rect = e.currentTarget.getBoundingClientRect();
             selectionStart = {
                 x: e.clientX - rect.left,
                 y: e.clientY - rect.top
             };
-            
-            console.log('Selection start point:', selectionStart);
             
             // Create selection box
             selectionBox = document.createElement('div');
@@ -713,7 +693,6 @@
             selectionBox.style.height = '0px';
             
             e.currentTarget.appendChild(selectionBox);
-            console.log('Selection box created and added');
         }
 
         function updateSelection(e) {
@@ -735,20 +714,10 @@
         }
 
         function endSelection(e) {
-            console.log('Ending selection...');
-            alert('🟡 Selection ended - Processing screenshot...');
-            
-            if (!isSelectingArea || !selectionStart || !selectionBox) {
-                console.log('Invalid selection state');
-                alert('❌ Invalid selection state');
-                return;
-            }
+            if (!isSelectingArea || !selectionStart || !selectionBox) return;
             
             const rect = selectionBox.getBoundingClientRect();
             const viewerRect = modelViewer.getBoundingClientRect();
-            
-            console.log('Selection box rect:', rect);
-            console.log('Viewer rect:', viewerRect);
             
             // Calculate relative position within the model viewer
             const selection = {
@@ -758,30 +727,21 @@
                 height: rect.height
             };
             
-            console.log('Final selection:', selection);
-            alert(`🟡 Selection: ${Math.round(selection.width)}x${Math.round(selection.height)}px`);
-            
             // Ensure minimum size
             if (selection.width < 10 || selection.height < 10) {
-                alert('❌ Selection too small. Please select a larger area.');
+                alert('Selection too small. Please select a larger area.');
                 cancelScreenshot();
                 return;
             }
             
             // Take screenshot
             takeScreenshot(selection);
-            
-            // Note: cancelScreenshot() will be called after screenshot is saved
         }
 
         function takeScreenshot(selection) {
-            console.log('Taking screenshot with selection:', selection);
-            
             // Get the model viewer element
             const viewerContainer = document.querySelector('.model-viewer-container');
             const rect = viewerContainer.getBoundingClientRect();
-            
-            console.log('Viewer container rect:', rect);
             
             // Calculate the actual coordinates within the model viewer
             const actualSelection = {
@@ -791,17 +751,11 @@
                 height: Math.min(selection.height, rect.height)
             };
             
-            console.log('Actual selection for capture:', actualSelection);
-            
             // Capture the model viewer
             captureModelViewer(actualSelection);
         }
 
         function captureModelViewer(selection) {
-            console.log('=== CAPTURE START - Version 2.2 - REAL MODEL CAPTURE ===');
-            console.log('Starting capture with selection:', selection);
-            alert('🟡 Capturing actual model content... (v2.2)');
-            
             // Try to capture the actual model-viewer content
             try {
                 // Method 1: Try to access the model-viewer's canvas directly
@@ -809,24 +763,16 @@
                                         modelViewer.shadowRoot?.querySelector('canvas');
                 
                 if (modelViewerCanvas) {
-                    console.log('Found model-viewer canvas, capturing real content');
-                    alert('🟢 Found model canvas! Capturing real content...');
                     captureRealModelContent(modelViewerCanvas, selection);
                 } else {
-                    console.log('Model-viewer canvas not accessible, trying html2canvas');
-                    alert('🟡 Using html2canvas for better capture...');
                     captureWithHtml2Canvas(selection);
                 }
             } catch (error) {
-                console.log('Error accessing model canvas:', error);
-                alert('⚠️ Canvas access blocked, using enhanced fallback...');
                 createEnhancedModelScreenshot(selection);
             }
         }
 
         function captureRealModelContent(sourceCanvas, selection) {
-            console.log('Capturing from real model canvas');
-            
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             
@@ -841,23 +787,15 @@
                 );
                 
                 const dataURL = canvas.toDataURL('image/png');
-                console.log('Real model content captured successfully');
-                alert('✅ Real model captured! Processing...');
                 saveScreenshot(dataURL);
                 
             } catch (error) {
-                console.log('Canvas draw error (CORS or security):', error);
-                alert('⚠️ Security restriction, trying html2canvas...');
                 captureWithHtml2Canvas(selection);
             }
         }
 
         function captureWithHtml2Canvas(selection) {
-            console.log('Trying html2canvas capture method');
-            
             if (typeof html2canvas === 'undefined') {
-                console.log('html2canvas not loaded, using enhanced fallback');
-                alert('⚠️ html2canvas not available, using enhanced method...');
                 createEnhancedModelScreenshot(selection);
                 return;
             }
@@ -874,22 +812,14 @@
                 y: selection.y,
                 scale: 1
             }).then(canvas => {
-                console.log('html2canvas capture successful');
-                alert('✅ html2canvas captured successfully!');
                 const dataURL = canvas.toDataURL('image/png');
                 saveScreenshot(dataURL);
             }).catch(error => {
-                console.log('html2canvas error:', error);
-                alert('⚠️ html2canvas failed, using enhanced fallback...');
                 createEnhancedModelScreenshot(selection);
             });
         }
 
         function createEnhancedModelScreenshot(selection) {
-            console.log('=== ENHANCED FALLBACK SCREENSHOT v2.2 ===');
-            console.log('Creating enhanced model representation...');
-            alert('🟡 Creating enhanced model representation... (v2.2)');
-            
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             
@@ -944,10 +874,7 @@
             ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
             ctx.setLineDash([]);
             
-            console.log('Enhanced fallback screenshot created');
-            
             const dataURL = canvas.toDataURL('image/png');
-            console.log('Enhanced screenshot data URL created, length:', dataURL.length);
             saveScreenshot(dataURL);
         }
 
@@ -1072,9 +999,6 @@
         }
 
         function saveScreenshot(dataURL) {
-            console.log('Saving screenshot, data URL length:', dataURL.length);
-            alert('🟢 Screenshot created! Adding to gallery...');
-            
             const screenshot = {
                 id: Date.now(),
                 image: dataURL,
@@ -1083,21 +1007,13 @@
                 comments: []
             };
             
-            console.log('Screenshot object created:', screenshot);
-            
             screenshots.push(screenshot);
-            console.log('Screenshot added to array. Total screenshots:', screenshots.length);
-            
             addScreenshotToGallery(screenshot);
             
             // Show gallery if first screenshot
             if (screenshots.length === 1) {
-                console.log('Showing gallery for first screenshot');
                 document.getElementById('screenshotGallery').style.display = 'block';
             }
-            
-            console.log('Screenshot saved successfully!');
-            alert('✅ Screenshot saved successfully! Check the gallery below.');
             
             // Clean up the screenshot process
             cancelScreenshot();
@@ -1226,8 +1142,6 @@
         }
 
         function cancelScreenshot() {
-            console.log('Cancelling screenshot...');
-            
             isSelectingArea = false;
             const overlay = document.getElementById('screenshotOverlay');
             overlay.style.display = 'none';
@@ -1243,7 +1157,6 @@
             }
             
             selectionStart = null;
-            console.log('Screenshot cancelled and controls restored');
         }
 
         // Modal functions
