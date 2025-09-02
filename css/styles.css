@@ -45,6 +45,50 @@ body {
     text-decoration: underline;
 }
 
+/* Quick Login Styles */
+.quick-login {
+    background: #f8f9fa;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin: 15px 0;
+    border: 1px solid #e0e0e0;
+}
+
+.quick-login span {
+    color: #666;
+    font-size: 14px;
+    margin-right: 10px;
+}
+
+.login-link {
+    display: inline-block;
+    padding: 6px 12px;
+    margin: 0 5px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.login-link.admin {
+    background: #667eea;
+    color: white;
+}
+
+.login-link.admin:hover {
+    background: #5a6fd8;
+}
+
+.login-link.client {
+    background: #28a745;
+    color: white;
+}
+
+.login-link.client:hover {
+    background: #218838;
+}
+
 /* Viewer Container Styles */
 .viewer-container {
     background: white;
