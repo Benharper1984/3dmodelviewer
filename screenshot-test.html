@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Screenshot Feature Test - 3D Model Viewer</title>
+    <title>Screenshot Feature Test v2.0 - 3D Model Viewer</title>
     <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
     <style>
         * {
@@ -797,8 +797,9 @@
         }
 
         function captureModelViewer(selection) {
+            console.log('=== CAPTURE START - Version 2.0 ===');
             console.log('Starting capture with selection:', selection);
-            alert('🟡 Starting capture process...');
+            alert('🟡 Starting capture process... (v2.0)');
             
             // Use the model-viewer's built-in screenshot capability
             const canvas = document.createElement('canvas');
@@ -811,9 +812,10 @@
             console.log('Canvas created with size:', canvas.width, 'x', canvas.height);
             
             // Always use fallback method for now since toBlob is unreliable
-            console.log('Using direct fallback method (toBlob is unreliable)...');
-            alert('🟡 Using reliable fallback method...');
+            console.log('=== USING DIRECT FALLBACK METHOD (toBlob is unreliable) ===');
+            alert('🟡 Using reliable fallback method... (v2.0)');
             createModelViewerScreenshot(canvas, ctx, selection);
+            return; // Exit early to avoid any other code paths
             
             /* 
             // Keeping toBlob code commented for future debugging
@@ -870,8 +872,9 @@
         }
 
         function createModelViewerScreenshot(canvas, ctx, selection) {
+            console.log('=== FALLBACK SCREENSHOT v2.0 ===');
             console.log('Creating fallback screenshot...');
-            alert('🟡 Creating screenshot representation...');
+            alert('🟡 Creating screenshot representation... (v2.0)');
             
             // Create a realistic background gradient
             const gradient = ctx.createRadialGradient(
