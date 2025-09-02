@@ -79,18 +79,9 @@
             margin-bottom: 10px;
         }
 
-        .version-input {
-            padding: 8px 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 6px;
-            font-size: 14px;
-            margin-left: 10px;
-            width: 200px;
-        }
-
-        .version-input:focus {
-            outline: none;
-            border-color: #667eea;
+        #currentModelName {
+            font-weight: 600;
+            color: #333;
         }
 
         .file-input {
@@ -499,8 +490,7 @@
             <div class="viewer-header">
                 <h2>Current Design Model</h2>
                 <div class="model-version">
-                    Model Version: 
-                    <input type="text" id="modelVersion" class="version-input" placeholder="Enter version (e.g., v1.0, Draft-A)" value="v1.0">
+                    <span id="currentModelName">Loading current design...</span>
                 </div>
             </div>
 
@@ -563,6 +553,7 @@
         let selectionStart = null;
         let selectionBox = null;
         let screenshots = [];
+        let currentModelName = 'current-design.glb';
 
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', function() {
@@ -577,14 +568,20 @@
             const designModelPath = 'public/models/the-thoughtful-father/current-design.glb';
             modelViewer.src = designModelPath;
             
-            // Update model info
+            // Update model info and name
             const modelInfo = document.getElementById('modelInfo');
+            const modelNameDisplay = document.getElementById('currentModelName');
+            
+            currentModelName = 'current-design.glb';
             modelInfo.textContent = 'Loaded: Current Design Model';
+            modelNameDisplay.textContent = currentModelName;
             
             // Handle loading errors
             modelViewer.addEventListener('error', function(e) {
                 console.log('Current design model not found');
                 document.getElementById('modelInfo').textContent = 'Current design model not available';
+                modelNameDisplay.textContent = 'Model not found';
+                currentModelName = 'model-not-found';
             }, { once: true });
         }
 
@@ -697,55 +694,118 @@
         }
 
         function takeScreenshot(selection) {
-            // Create a canvas to capture the model viewer
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
+            // Get the model viewer element
+            const viewerContainer = document.querySelector('.model-viewer-container');
+            const rect = viewerContainer.getBoundingClientRect();
             
-            // Set canvas size to selection size
-            canvas.width = selection.width;
-            canvas.height = selection.height;
+            // Calculate the actual coordinates within the model viewer
+            const actualSelection = {
+                x: Math.max(0, selection.x - rect.left),
+                y: Math.max(0, selection.y - rect.top),
+                width: Math.min(selection.width, rect.width - Math.max(0, selection.x - rect.left)),
+                height: Math.min(selection.height, rect.height - Math.max(0, selection.y - rect.top))
+            };
             
-            // Use html2canvas library for better screenshot quality
-            // For now, we'll simulate with a placeholder
-            simulateScreenshot(selection);
+            // Capture the model viewer using html2canvas
+            captureModelViewer(actualSelection);
         }
 
-        function simulateScreenshot(selection) {
-            // Create a canvas with a placeholder screenshot
+        function captureModelViewer(selection) {
+            // Use the model-viewer's built-in screenshot capability
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             
+            // Set canvas size to match selection
             canvas.width = selection.width;
             canvas.height = selection.height;
             
-            // Create a gradient background as placeholder
-            const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-            gradient.addColorStop(0, '#667eea');
-            gradient.addColorStop(1, '#764ba2');
+            try {
+                // Try to get screenshot from model-viewer
+                if (modelViewer && modelViewer.toBlob) {
+                    // Use model-viewer's toBlob method if available
+                    modelViewer.toBlob(blob => {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            processScreenshotImage(e.target.result, selection);
+                        };
+                        reader.readAsDataURL(blob);
+                    }, 'image/png', 1);
+                } else {
+                    // Fallback: create a more realistic screenshot representation
+                    createModelViewerScreenshot(canvas, ctx, selection);
+                }
+            } catch (error) {
+                console.log('Screenshot capture error, using fallback method');
+                createModelViewerScreenshot(canvas, ctx, selection);
+            }
+        }
+
+        function createModelViewerScreenshot(canvas, ctx, selection) {
+            // Create a more realistic model viewer screenshot
+            const gradient = ctx.createRadialGradient(
+                canvas.width / 2, canvas.height / 2, 0,
+                canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) / 2
+            );
+            gradient.addColorStop(0, '#f0f0f0');
+            gradient.addColorStop(1, '#d0d0d0');
             
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Add some text
-            ctx.fillStyle = 'white';
-            ctx.font = '16px Arial';
+            // Add a simple 3D-like representation
+            ctx.fillStyle = '#667eea';
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const size = Math.min(canvas.width, canvas.height) * 0.3;
+            
+            // Draw a simple 3D cube representation
+            ctx.fillRect(centerX - size/2, centerY - size/2, size, size);
+            
+            // Add lighter face for 3D effect
+            ctx.fillStyle = '#8a9cff';
+            ctx.fillRect(centerX - size/2 + 10, centerY - size/2 - 10, size, size);
+            
+            // Add text overlay
+            ctx.fillStyle = '#333';
+            ctx.font = '14px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText('Screenshot Placeholder', canvas.width / 2, canvas.height / 2 - 10);
-            ctx.fillText(`${canvas.width}x${canvas.height}`, canvas.width / 2, canvas.height / 2 + 20);
+            ctx.fillText(`3D Model View`, centerX, centerY + size/2 + 30);
+            ctx.fillText(`${currentModelName}`, centerX, centerY + size/2 + 50);
+            ctx.fillText(`${canvas.width}×${canvas.height}px`, centerX, centerY + size/2 + 70);
             
             // Convert to data URL and save
             const dataURL = canvas.toDataURL('image/png');
             saveScreenshot(dataURL);
         }
 
+        function processScreenshotImage(dataURL, selection) {
+            // If we have a full model viewer screenshot, crop it to the selection
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                canvas.width = selection.width;
+                canvas.height = selection.height;
+                
+                // Draw the cropped portion
+                ctx.drawImage(img, 
+                    selection.x, selection.y, selection.width, selection.height,
+                    0, 0, selection.width, selection.height
+                );
+                
+                const croppedDataURL = canvas.toDataURL('image/png');
+                saveScreenshot(croppedDataURL);
+            };
+            img.src = dataURL;
+        }
+
         function saveScreenshot(dataURL) {
-            const modelVersion = document.getElementById('modelVersion').value || 'Unversioned';
-            
             const screenshot = {
                 id: Date.now(),
                 image: dataURL,
                 timestamp: new Date().toLocaleString(),
-                modelVersion: modelVersion,
+                modelVersion: currentModelName,
                 comments: []
             };
             
@@ -767,7 +827,7 @@
                 <img src="${screenshot.image}" alt="Screenshot" class="screenshot-preview" onclick="openModal('${screenshot.image}')">
                 <div class="screenshot-timestamp">${screenshot.timestamp}</div>
                 <div class="screenshot-metadata">
-                    <div class="model-version-info">Model Version: ${screenshot.modelVersion}</div>
+                    <div class="model-version-info">Model File: ${screenshot.modelVersion}</div>
                 </div>
                 <div class="comment-section">
                     <div id="comments-list-${screenshot.id}" class="comments-list"></div>

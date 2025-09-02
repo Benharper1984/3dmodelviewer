@@ -642,27 +642,8 @@
 
         // Drag and drop functionality
         function setupDragAndDrop() {
-            const uploadArea = document.querySelector('.file-upload-area');
-
-            uploadArea.addEventListener('dragover', function(e) {
-                e.preventDefault();
-                uploadArea.classList.add('dragover');
-            });
-
-            uploadArea.addEventListener('dragleave', function(e) {
-                e.preventDefault();
-                uploadArea.classList.remove('dragover');
-            });
-
-            uploadArea.addEventListener('drop', function(e) {
-                e.preventDefault();
-                uploadArea.classList.remove('dragover');
-                
-                const files = e.dataTransfer.files;
-                if (files.length > 0) {
-                    loadModel(files[0]);
-                }
-            });
+            // Upload functionality removed - always load current design
+            console.log('Drag and drop not needed - auto-loading current design');
         }
 
         // Load 3D model
