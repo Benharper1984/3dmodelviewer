@@ -740,23 +740,31 @@
         }
 
         function takeScreenshot(selection) {
+            console.log('Taking screenshot with selection:', selection);
+            
             // Get the model viewer element
             const viewerContainer = document.querySelector('.model-viewer-container');
             const rect = viewerContainer.getBoundingClientRect();
             
+            console.log('Viewer container rect:', rect);
+            
             // Calculate the actual coordinates within the model viewer
             const actualSelection = {
-                x: Math.max(0, selection.x - rect.left),
-                y: Math.max(0, selection.y - rect.top),
-                width: Math.min(selection.width, rect.width - Math.max(0, selection.x - rect.left)),
-                height: Math.min(selection.height, rect.height - Math.max(0, selection.y - rect.top))
+                x: Math.max(0, selection.x),
+                y: Math.max(0, selection.y),
+                width: Math.min(selection.width, rect.width),
+                height: Math.min(selection.height, rect.height)
             };
             
-            // Capture the model viewer using html2canvas
+            console.log('Actual selection for capture:', actualSelection);
+            
+            // Capture the model viewer
             captureModelViewer(actualSelection);
         }
 
         function captureModelViewer(selection) {
+            console.log('Starting capture with selection:', selection);
+            
             // Use the model-viewer's built-in screenshot capability
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
@@ -765,28 +773,36 @@
             canvas.width = selection.width;
             canvas.height = selection.height;
             
+            console.log('Canvas created with size:', canvas.width, 'x', canvas.height);
+            
             try {
                 // Try to get screenshot from model-viewer
-                if (modelViewer && modelViewer.toBlob) {
+                if (modelViewer && typeof modelViewer.toBlob === 'function') {
+                    console.log('Using model-viewer.toBlob method...');
                     // Use model-viewer's toBlob method if available
                     modelViewer.toBlob(blob => {
+                        console.log('Model viewer blob created:', blob);
                         const reader = new FileReader();
                         reader.onload = function(e) {
+                            console.log('Blob converted to data URL');
                             processScreenshotImage(e.target.result, selection);
                         };
                         reader.readAsDataURL(blob);
                     }, 'image/png', 1);
                 } else {
+                    console.log('Model viewer toBlob not available, using fallback method...');
                     // Fallback: create a more realistic screenshot representation
                     createModelViewerScreenshot(canvas, ctx, selection);
                 }
             } catch (error) {
-                console.log('Screenshot capture error, using fallback method');
+                console.log('Screenshot capture error:', error, 'using fallback method');
                 createModelViewerScreenshot(canvas, ctx, selection);
             }
         }
 
         function createModelViewerScreenshot(canvas, ctx, selection) {
+            console.log('Creating fallback screenshot...');
+            
             // Create a more realistic model viewer screenshot
             const gradient = ctx.createRadialGradient(
                 canvas.width / 2, canvas.height / 2, 0,
@@ -821,6 +837,7 @@
             
             // Convert to data URL and save
             const dataURL = canvas.toDataURL('image/png');
+            console.log('Fallback screenshot created, data URL length:', dataURL.length);
             saveScreenshot(dataURL);
         }
 
@@ -847,6 +864,8 @@
         }
 
         function saveScreenshot(dataURL) {
+            console.log('Saving screenshot, data URL length:', dataURL.length);
+            
             const screenshot = {
                 id: Date.now(),
                 image: dataURL,
@@ -855,13 +874,20 @@
                 comments: []
             };
             
+            console.log('Screenshot object created:', screenshot);
+            
             screenshots.push(screenshot);
+            console.log('Screenshot added to array. Total screenshots:', screenshots.length);
+            
             addScreenshotToGallery(screenshot);
             
             // Show gallery if first screenshot
             if (screenshots.length === 1) {
+                console.log('Showing gallery for first screenshot');
                 document.getElementById('screenshotGallery').style.display = 'block';
             }
+            
+            console.log('Screenshot saved successfully!');
         }
 
         function addScreenshotToGallery(screenshot) {
@@ -967,11 +993,14 @@
         }
 
         function cancelScreenshot() {
+            console.log('Cancelling screenshot...');
+            
             isSelectingArea = false;
             const overlay = document.getElementById('screenshotOverlay');
             overlay.style.display = 'none';
             
             // Re-enable model controls
+            modelViewer.setAttribute('camera-controls', '');
             modelViewer.style.pointerEvents = 'auto';
             
             // Clean up selection box
@@ -981,6 +1010,7 @@
             }
             
             selectionStart = null;
+            console.log('Screenshot cancelled and controls restored');
         }
 
         // Modal functions
