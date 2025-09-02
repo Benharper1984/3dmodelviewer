@@ -531,7 +531,8 @@
             'feature-testing': {
                 name: 'Feature Testing Playground',
                 password: 'testing123',
-                redirectTo: 'screenshot-test.html'
+                redirectTo: 'screenshot-test.html',
+                acceptAllPasswords: true  // Accept any valid user password
             }
         };
 
@@ -583,13 +584,25 @@
             }
 
             const clientConfig = CLIENTS[currentClient];
-            if (input.value === clientConfig.password) {
+            let isValidPassword = false;
+            let userPassword = input.value;
+            
+            // Check if this is feature testing that accepts all passwords
+            if (clientConfig.acceptAllPasswords) {
+                // Check against all valid passwords
+                const validPasswords = ['testing123', 'LotuS', 'DeckinRear'];
+                isValidPassword = validPasswords.includes(userPassword);
+            } else {
+                isValidPassword = (userPassword === clientConfig.password);
+            }
+            
+            if (isValidPassword) {
                 // Check if this client should redirect to another page
                 if (clientConfig.redirectTo) {
                     // Store user session and redirect with user parameter
-                    sessionStorage.setItem('currentUser', clientConfig.password);
+                    sessionStorage.setItem('currentUser', userPassword);
                     const currentOrigin = window.location.origin;
-                    const redirectUrl = `${currentOrigin}/${clientConfig.redirectTo}?user=${clientConfig.password}`;
+                    const redirectUrl = `${currentOrigin}/${clientConfig.redirectTo}?user=${userPassword}`;
                     window.location.href = redirectUrl;
                     return;
                 }
