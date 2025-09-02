@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Screenshot Feature Test v2.0 - 3D Model Viewer</title>
+    <title>Screenshot Feature Test v2.1 - 3D Model Viewer</title>
     <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
     <style>
         * {
@@ -797,9 +797,9 @@
         }
 
         function captureModelViewer(selection) {
-            console.log('=== CAPTURE START - Version 2.0 ===');
+            console.log('=== CAPTURE START - Version 2.1 - DEPLOYMENT FORCED ===');
             console.log('Starting capture with selection:', selection);
-            alert('🟡 Starting capture process... (v2.0)');
+            alert('🟡 Starting capture process... (v2.1 - FORCED DEPLOYMENT)');
             
             // Use the model-viewer's built-in screenshot capability
             const canvas = document.createElement('canvas');
@@ -813,7 +813,7 @@
             
             // Always use fallback method for now since toBlob is unreliable
             console.log('=== USING DIRECT FALLBACK METHOD (toBlob is unreliable) ===');
-            alert('🟡 Using reliable fallback method... (v2.0)');
+            alert('🟡 Using reliable fallback method... (v2.1 FORCED)');
             createModelViewerScreenshot(canvas, ctx, selection);
             return; // Exit early to avoid any other code paths
             
@@ -872,9 +872,9 @@
         }
 
         function createModelViewerScreenshot(canvas, ctx, selection) {
-            console.log('=== FALLBACK SCREENSHOT v2.0 ===');
+            console.log('=== FALLBACK SCREENSHOT v2.1 - FORCED DEPLOYMENT ===');
             console.log('Creating fallback screenshot...');
-            alert('🟡 Creating screenshot representation... (v2.0)');
+            alert('🟡 Creating screenshot representation... (v2.1 FORCED)');
             
             // Create a realistic background gradient
             const gradient = ctx.createRadialGradient(
