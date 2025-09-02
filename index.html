@@ -586,9 +586,10 @@
             if (input.value === clientConfig.password) {
                 // Check if this client should redirect to another page
                 if (clientConfig.redirectTo) {
-                    // Use absolute URL construction for better compatibility
+                    // Store user session and redirect with user parameter
+                    sessionStorage.setItem('currentUser', clientConfig.password);
                     const currentOrigin = window.location.origin;
-                    const redirectUrl = `${currentOrigin}/${clientConfig.redirectTo}`;
+                    const redirectUrl = `${currentOrigin}/${clientConfig.redirectTo}?user=${clientConfig.password}`;
                     window.location.href = redirectUrl;
                     return;
                 }

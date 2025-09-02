@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Screenshot Feature Test v2.3 - 3D Model Viewer</title>
+    <title>Screenshot Feature Test v2.4 - 3D Model Viewer</title>
     <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
@@ -308,6 +308,24 @@
             color: #667eea;
         }
 
+        .created-by-info {
+            font-size: 11px;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        .comment-author {
+            font-size: 12px;
+            margin-bottom: 5px;
+            color: #667eea;
+        }
+
+        .comment-role {
+            font-weight: normal;
+            color: #999;
+            font-size: 10px;
+        }
+
         .comment-section {
             margin-top: 10px;
         }
@@ -584,13 +602,79 @@
         let selectionBox = null;
         let screenshots = [];
         let currentModelName = 'current-design.glb';
+        let currentUser = null; // Will store user info from login
+
+        // User permissions based on login
+        const USER_ROLES = {
+            'testing123': { name: 'Admin', role: 'admin', canDelete: true },
+            'LotuS': { name: 'The Thoughtful Father', role: 'client', canDelete: false },
+            'DeckinRear': { name: 'The Favorite Neighbors', role: 'client', canDelete: false }
+        };
 
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', function() {
             modelViewer = document.getElementById('modelViewer');
             setupKeyboardShortcuts();
             loadCurrentDesign();
+            detectUserFromSession();
+            loadStoredData();
         });
+
+        // Detect user from session storage (passed from main page)
+        function detectUserFromSession() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const userPassword = urlParams.get('user') || sessionStorage.getItem('currentUser');
+            
+            if (userPassword && USER_ROLES[userPassword]) {
+                currentUser = USER_ROLES[userPassword];
+                sessionStorage.setItem('currentUser', userPassword);
+                updateUIForUser();
+            } else {
+                // Default to admin for testing page
+                currentUser = USER_ROLES['testing123'];
+            }
+        }
+
+        // Update UI based on user permissions
+        function updateUIForUser() {
+            if (currentUser) {
+                // Add user indicator to header
+                const header = document.querySelector('.viewer-header h2');
+                header.innerHTML = `Current Design Model <span style="font-size: 14px; color: #667eea; font-weight: normal;">(${currentUser.name})</span>`;
+            }
+        }
+
+        // Storage functions
+        function saveToStorage() {
+            const data = {
+                screenshots: screenshots,
+                timestamp: new Date().toISOString()
+            };
+            localStorage.setItem('screenshotData', JSON.stringify(data));
+        }
+
+        function loadStoredData() {
+            try {
+                const stored = localStorage.getItem('screenshotData');
+                if (stored) {
+                    const data = JSON.parse(stored);
+                    screenshots = data.screenshots || [];
+                    
+                    // Load screenshots into gallery
+                    if (screenshots.length > 0) {
+                        const container = document.getElementById('screenshotsContainer');
+                        container.innerHTML = ''; // Clear empty state
+                        
+                        screenshots.forEach(screenshot => {
+                            addScreenshotToGallery(screenshot, false); // false = don't save to storage again
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading stored data:', error);
+                screenshots = [];
+            }
+        }
 
         // Load the current design model automatically
         function loadCurrentDesign() {
@@ -1004,11 +1088,16 @@
                 image: dataURL,
                 timestamp: new Date().toLocaleString(),
                 modelVersion: currentModelName,
+                createdBy: currentUser ? currentUser.name : 'Unknown User',
+                createdByRole: currentUser ? currentUser.role : 'unknown',
                 comments: []
             };
             
             screenshots.push(screenshot);
-            addScreenshotToGallery(screenshot);
+            addScreenshotToGallery(screenshot, true);
+            
+            // Save to storage
+            saveToStorage();
             
             // Show gallery if first screenshot
             if (screenshots.length === 1) {
@@ -1019,7 +1108,7 @@
             cancelScreenshot();
         }
 
-        function addScreenshotToGallery(screenshot) {
+        function addScreenshotToGallery(screenshot, shouldSave = true) {
             const container = document.getElementById('screenshotsContainer');
             
             // Hide empty state if this is the first screenshot
@@ -1028,6 +1117,9 @@
                 emptyState.style.display = 'none';
             }
             
+            // Determine if current user can delete this screenshot
+            const canDeleteScreenshot = currentUser && currentUser.canDelete;
+            
             const item = document.createElement('div');
             item.className = 'screenshot-item';
             item.innerHTML = `
@@ -1035,18 +1127,26 @@
                 <div class="screenshot-timestamp">${screenshot.timestamp}</div>
                 <div class="screenshot-metadata">
                     <div class="model-version-info">Model File: ${screenshot.modelVersion}</div>
+                    <div class="created-by-info">Created by: <strong>${screenshot.createdBy}</strong></div>
                 </div>
                 <div class="comment-section">
                     <div id="comments-list-${screenshot.id}" class="comments-list"></div>
                     <textarea class="comment-input" placeholder="Add a comment about this screenshot..." data-id="${screenshot.id}"></textarea>
                     <div class="comment-buttons">
                         <button class="save-comment-btn" onclick="addComment(${screenshot.id})">Add Comment</button>
-                        <button class="delete-screenshot-btn" onclick="deleteScreenshot(${screenshot.id})">Delete Screenshot</button>
+                        ${canDeleteScreenshot ? `<button class="delete-screenshot-btn" onclick="deleteScreenshot(${screenshot.id})">Delete Screenshot</button>` : ''}
                     </div>
                 </div>
             `;
             
             container.appendChild(item);
+            
+            // Load existing comments
+            if (screenshot.comments && screenshot.comments.length > 0) {
+                screenshot.comments.forEach(comment => {
+                    displayComment(screenshot.id, comment);
+                });
+            }
         }
 
         function addComment(screenshotId) {
@@ -1064,11 +1164,16 @@
                 const comment = {
                     id: Date.now(),
                     text: commentText,
-                    timestamp: new Date().toLocaleString()
+                    timestamp: new Date().toLocaleString(),
+                    author: currentUser ? currentUser.name : 'Unknown User',
+                    authorRole: currentUser ? currentUser.role : 'unknown'
                 };
                 
                 screenshot.comments.push(comment);
                 displayComment(screenshotId, comment);
+                
+                // Save to storage
+                saveToStorage();
                 
                 // Clear input
                 input.value = '';
@@ -1078,10 +1183,17 @@
         function displayComment(screenshotId, comment) {
             const commentsList = document.getElementById(`comments-list-${screenshotId}`);
             
+            // Determine if current user can delete this comment
+            const canDeleteComment = currentUser && (currentUser.canDelete || comment.author === currentUser.name);
+            
             const commentDiv = document.createElement('div');
             commentDiv.className = 'comment-item';
             commentDiv.innerHTML = `
-                <button class="delete-comment-btn" onclick="deleteComment(${screenshotId}, ${comment.id})" title="Delete comment">×</button>
+                ${canDeleteComment ? `<button class="delete-comment-btn" onclick="deleteComment(${screenshotId}, ${comment.id})" title="Delete comment">×</button>` : ''}
+                <div class="comment-author">
+                    <strong>${comment.author}</strong>
+                    <span class="comment-role">${comment.authorRole === 'admin' ? '(Admin)' : '(Client)'}</span>
+                </div>
                 <div class="comment-text">${comment.text}</div>
                 <div class="comment-timestamp">${comment.timestamp}</div>
             `;
@@ -1095,6 +1207,9 @@
                 const screenshot = screenshots.find(s => s.id === screenshotId);
                 if (screenshot) {
                     screenshot.comments = screenshot.comments.filter(c => c.id !== commentId);
+                    
+                    // Save to storage
+                    saveToStorage();
                 }
                 
                 // Remove from DOM
@@ -1104,9 +1219,17 @@
         }
 
         function deleteScreenshot(screenshotId) {
+            if (!currentUser || !currentUser.canDelete) {
+                alert('You do not have permission to delete screenshots.');
+                return;
+            }
+            
             if (confirm('Are you sure you want to delete this screenshot?')) {
                 // Remove from array
                 screenshots = screenshots.filter(s => s.id !== screenshotId);
+                
+                // Save to storage
+                saveToStorage();
                 
                 // Remove from DOM
                 const item = document.querySelector(`[data-id="${screenshotId}"]`).closest('.screenshot-item');
@@ -1127,8 +1250,17 @@
         }
 
         function clearAllScreenshots() {
+            if (!currentUser || !currentUser.canDelete) {
+                alert('You do not have permission to clear all screenshots.');
+                return;
+            }
+            
             if (confirm('Are you sure you want to delete all screenshots?')) {
                 screenshots = [];
+                
+                // Clear storage
+                localStorage.removeItem('screenshotData');
+                
                 const container = document.getElementById('screenshotsContainer');
                 container.innerHTML = `
                     <div class="empty-gallery">
@@ -1137,7 +1269,6 @@
                         <div class="empty-gallery-subtext">Drag to select an area on the model above to take a screenshot</div>
                     </div>
                 `;
-                // Keep gallery visible but show empty state
             }
         }
 
