@@ -36,6 +36,9 @@ class App {
         // Setup keyboard shortcuts
         this.setupKeyboardShortcuts();
         
+        // Setup notification UI
+        this.setupNotificationUI(currentUser);
+        
         // Make managers globally available for backward compatibility
         window.galleryManager = this.galleryManager;
         window.modalManager = this.modalManager;
@@ -46,6 +49,32 @@ class App {
         window.addEventListener('screenshotSaved', (e) => {
             this.galleryManager.addScreenshot(e.detail);
         });
+    }
+
+    setupNotificationUI(currentUser) {
+        const notificationControls = document.getElementById('notificationControls');
+        const messageClientBtn = document.getElementById('messageClientBtn');
+        const messageBenBtn = document.getElementById('messageBenBtn');
+        const quickNotifyBtn = document.getElementById('quickNotifyBtn');
+        
+        if (!notificationControls) return;
+        
+        if (currentUser && currentUser.role === 'admin') {
+            // Show admin controls
+            notificationControls.style.display = 'block';
+            messageClientBtn.style.display = 'inline-block';
+            messageBenBtn.style.display = 'none';
+            quickNotifyBtn.style.display = 'none';
+        } else if (currentUser) {
+            // Show client controls
+            notificationControls.style.display = 'block';
+            messageClientBtn.style.display = 'none';
+            messageBenBtn.style.display = 'inline-block';
+            quickNotifyBtn.style.display = 'inline-block';
+        } else {
+            // Hide all notification controls for unauthenticated users
+            notificationControls.style.display = 'none';
+        }
     }
 
     setupKeyboardShortcuts() {

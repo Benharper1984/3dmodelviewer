@@ -129,6 +129,15 @@ class GalleryManager {
                 screenshot.comments.push(comment);
                 this.displayComment(screenshotId, comment);
                 
+                // Auto-notify admin when client adds comment
+                if (window.notificationManager) {
+                    try {
+                        await window.notificationManager.notifyComment(screenshotId, commentText);
+                    } catch (notifyError) {
+                        console.log('Notification failed (non-critical):', notifyError);
+                    }
+                }
+                
                 // Clear input
                 input.value = '';
             }

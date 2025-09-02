@@ -60,6 +60,17 @@
                 <button class="control-btn" onclick="resetCamera()">Reset Camera</button>
                 <button class="control-btn active" id="autoRotateBtn" onclick="toggleAutoRotate()">Auto Rotate: OFF</button>
                 <button class="control-btn screenshot-btn" onclick="startScreenshot()">📸 Take Screenshot</button>
+                
+                <!-- Notification Controls -->
+                <div id="notificationControls" style="display: none;" class="notification-controls">
+                    <!-- Admin buttons -->
+                    <button id="messageClientBtn" class="control-btn notification-btn" onclick="notificationManager.showAdminMessageModal()" style="display: none;">📧 Message Client</button>
+                    
+                    <!-- Client buttons -->
+                    <button id="messageBenBtn" class="control-btn notification-btn" onclick="notificationManager.showClientMessageModal()" style="display: none;">📬 Message Ben</button>
+                    <button id="quickNotifyBtn" class="control-btn notification-btn" onclick="notificationManager.quickNotifyAdmin()" style="display: none;">🔔 Quick Notify</button>
+                </div>
+                
                 <div class="model-info" id="modelInfo">Upload a model to start testing</div>
             </div>
 
@@ -95,6 +106,7 @@
     <script src="js/model-viewer-controller.js"></script>
     <script src="js/screenshot-core.js"></script>
     <script src="js/modal-manager.js"></script>
+    <script src="js/notification-manager.js"></script>
     <script src="js/app.js"></script>
     
     <!-- Initialize Application -->

@@ -266,6 +266,22 @@ class ScreenshotCore {
             detail: screenshot 
         }));
         
+        // Auto-notify admin when client takes screenshot
+        if (window.notificationManager) {
+            try {
+                // Use setTimeout to avoid blocking the UI
+                setTimeout(async () => {
+                    try {
+                        await window.notificationManager.notifyScreenshot(screenshot.id);
+                    } catch (notifyError) {
+                        console.log('Notification failed (non-critical):', notifyError);
+                    }
+                }, 100);
+            } catch (error) {
+                console.log('Notification setup failed (non-critical):', error);
+            }
+        }
+        
         // Clean up the screenshot process
         this.cancelScreenshot();
     }
