@@ -207,7 +207,7 @@
             padding: 20px;
             background: #f8f9fa;
             border-top: 1px solid #e0e0e0;
-            display: none;
+            display: block; /* Always show the gallery */
         }
 
         .gallery-header {
@@ -241,6 +241,31 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
+        }
+
+        .empty-gallery {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+            background: white;
+            border-radius: 8px;
+            border: 2px dashed #ddd;
+        }
+
+        .empty-gallery-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        .empty-gallery-text {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .empty-gallery-subtext {
+            font-size: 14px;
+            color: #999;
         }
 
         .screenshot-item {
@@ -531,7 +556,11 @@
                     <button class="clear-gallery-btn" onclick="clearAllScreenshots()">Clear All</button>
                 </div>
                 <div id="screenshotsContainer" class="screenshots-container">
-                    <!-- Screenshots will be added here dynamically -->
+                    <div class="empty-gallery">
+                        <div class="empty-gallery-icon">📷</div>
+                        <div class="empty-gallery-text">No screenshots yet</div>
+                        <div class="empty-gallery-subtext">Drag to select an area on the model above to take a screenshot</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -931,6 +960,12 @@
         function addScreenshotToGallery(screenshot) {
             const container = document.getElementById('screenshotsContainer');
             
+            // Hide empty state if this is the first screenshot
+            const emptyState = container.querySelector('.empty-gallery');
+            if (emptyState) {
+                emptyState.style.display = 'none';
+            }
+            
             const item = document.createElement('div');
             item.className = 'screenshot-item';
             item.innerHTML = `
@@ -1015,9 +1050,16 @@
                 const item = document.querySelector(`[data-id="${screenshotId}"]`).closest('.screenshot-item');
                 item.remove();
                 
-                // Hide gallery if no screenshots
+                // Show empty state if no screenshots remain
                 if (screenshots.length === 0) {
-                    document.getElementById('screenshotGallery').style.display = 'none';
+                    const container = document.getElementById('screenshotsContainer');
+                    container.innerHTML = `
+                        <div class="empty-gallery">
+                            <div class="empty-gallery-icon">📷</div>
+                            <div class="empty-gallery-text">No screenshots yet</div>
+                            <div class="empty-gallery-subtext">Drag to select an area on the model above to take a screenshot</div>
+                        </div>
+                    `;
                 }
             }
         }
@@ -1025,8 +1067,15 @@
         function clearAllScreenshots() {
             if (confirm('Are you sure you want to delete all screenshots?')) {
                 screenshots = [];
-                document.getElementById('screenshotsContainer').innerHTML = '';
-                document.getElementById('screenshotGallery').style.display = 'none';
+                const container = document.getElementById('screenshotsContainer');
+                container.innerHTML = `
+                    <div class="empty-gallery">
+                        <div class="empty-gallery-icon">📷</div>
+                        <div class="empty-gallery-text">No screenshots yet</div>
+                        <div class="empty-gallery-subtext">Drag to select an area on the model above to take a screenshot</div>
+                    </div>
+                `;
+                // Keep gallery visible but show empty state
             }
         }
 
