@@ -1,9 +1,12 @@
 import { list } from '@vercel/blob';
-import { NextResponse } from 'next/server';
 
-export async function GET(request) {
+export default async function handler(request, response) {
+  if (request.method !== 'GET') {
+    return response.status(405).json({ error: 'Method not allowed' });
+  }
+
   try {
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(request.url, `http://${request.headers.host}`);
     const prefix = searchParams.get('prefix') || 'screenshots/';
     
     const { blobs } = await list({
@@ -11,11 +14,9 @@ export async function GET(request) {
       limit: 100
     });
     
-    return NextResponse.json({ screenshots: blobs });
+    return response.status(200).json({ screenshots: blobs });
   } catch (error) {
     console.error('List error:', error);
-    return NextResponse.json({ error: 'Failed to list screenshots' }, { status: 500 });
+    return response.status(500).json({ error: 'Failed to list screenshots', details: error.message });
   }
 }
-
-export const runtime = 'edge';

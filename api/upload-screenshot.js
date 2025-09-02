@@ -1,27 +1,33 @@
 import { put } from '@vercel/blob';
-import { NextRequest, NextResponse } from 'next/server';
 
-export async function POST(request) {
+export default async function handler(request, response) {
+  if (request.method !== 'POST') {
+    return response.status(405).json({ error: 'Method not allowed' });
+  }
+
   try {
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(request.url, `http://${request.headers.host}`);
     const filename = searchParams.get('filename');
     
     if (!filename) {
-      return NextResponse.json({ error: 'Filename is required' }, { status: 400 });
+      return response.status(400).json({ error: 'Filename is required' });
     }
     
-    const body = await request.blob();
+    // Get the blob data from the request body
+    const chunks = [];
+    for await (const chunk of request) {
+      chunks.push(chunk);
+    }
+    const buffer = Buffer.concat(chunks);
     
-    const blob = await put(filename, body, {
+    const blob = await put(filename, buffer, {
       access: 'public',
       addRandomSuffix: false,
     });
     
-    return NextResponse.json(blob);
+    return response.status(200).json(blob);
   } catch (error) {
     console.error('Upload error:', error);
-    return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
+    return response.status(500).json({ error: 'Upload failed', details: error.message });
   }
 }
-
-export const runtime = 'edge';

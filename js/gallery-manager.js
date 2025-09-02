@@ -41,7 +41,13 @@ class GalleryManager {
             
         } catch (error) {
             console.error('Failed to save screenshot:', error);
-            alert('Failed to save screenshot. Please try again.');
+            
+            // More specific error message
+            if (error.message.includes('Vercel Blob not configured')) {
+                alert('Screenshots are being saved locally. For cloud storage, please configure Vercel Blob in your dashboard.');
+            } else {
+                alert('Failed to save screenshot. Please try again.');
+            }
         }
     }
 

@@ -29,30 +29,43 @@ class CloudStorageManager {
     // Upload screenshot to Vercel Blob
     async uploadScreenshot(canvas, metadata) {
         try {
+            // Try cloud storage first
             const blob = await this.canvasToBlob(canvas);
             const timestamp = Date.now();
             const filename = `screenshots/${this.currentJobId}/screenshot-${timestamp}.jpg`;
             
+            console.log('Attempting to upload to:', `${this.apiBase}/upload-screenshot?filename=${encodeURIComponent(filename)}`);
+            
             // Upload image
             const uploadResponse = await fetch(`${this.apiBase}/upload-screenshot?filename=${encodeURIComponent(filename)}`, {
                 method: 'POST',
-                body: blob
+                body: blob,
+                headers: {
+                    'Content-Type': 'image/jpeg'
+                }
             });
             
+            console.log('Upload response status:', uploadResponse.status);
+            console.log('Upload response headers:', uploadResponse.headers);
+            
             if (!uploadResponse.ok) {
-                throw new Error('Failed to upload screenshot');
+                const errorText = await uploadResponse.text();
+                console.error('Upload failed with status:', uploadResponse.status, 'Error:', errorText);
+                throw new Error(`Vercel Blob upload failed: ${uploadResponse.status} ${errorText}`);
             }
             
-            const { url } = await uploadResponse.json();
+            const responseData = await uploadResponse.json();
+            console.log('Upload successful:', responseData);
             
             // Create screenshot record with cloud URL
             const screenshotRecord = {
                 id: timestamp,
-                url: url,
+                url: responseData.url,
                 timestamp: new Date().toLocaleString(),
                 comments: [],
                 jobId: this.currentJobId,
                 user: metadata.user || 'Unknown',
+                isCloudStored: true,
                 ...metadata
             };
             
@@ -61,8 +74,25 @@ class CloudStorageManager {
             
             return screenshotRecord;
         } catch (error) {
-            console.error('Upload failed:', error);
-            throw error;
+            console.warn('Cloud storage failed, using localStorage fallback:', error.message);
+            
+            // Fallback to localStorage
+            const dataURL = canvas.toDataURL('image/jpeg', 0.8);
+            const timestamp = Date.now();
+            
+            const screenshotRecord = {
+                id: timestamp,
+                url: dataURL, // Store base64 as fallback
+                timestamp: new Date().toLocaleString(),
+                comments: [],
+                jobId: this.currentJobId,
+                user: metadata.user || 'Unknown',
+                isCloudStored: false,
+                ...metadata
+            };
+            
+            await this.saveMetadata(screenshotRecord);
+            return screenshotRecord;
         }
     }
 
@@ -130,13 +160,15 @@ class CloudStorageManager {
             
             const screenshot = metadata[screenshotIndex];
             
-            // Delete from Vercel Blob
-            const deleteResponse = await fetch(`${this.apiBase}/delete-screenshot?url=${encodeURIComponent(screenshot.url)}`, {
-                method: 'DELETE'
-            });
-            
-            if (!deleteResponse.ok) {
-                console.warn('Failed to delete from cloud, removing from metadata anyway');
+            // Only try to delete from cloud if it was stored there
+            if (screenshot.isCloudStored) {
+                const deleteResponse = await fetch(`${this.apiBase}/delete-screenshot?url=${encodeURIComponent(screenshot.url)}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!deleteResponse.ok) {
+                    console.warn('Failed to delete from cloud, removing from metadata anyway');
+                }
             }
             
             // Remove from metadata
@@ -155,14 +187,16 @@ class CloudStorageManager {
         try {
             const metadata = this.getStoredMetadata();
             
-            // Delete all from cloud
-            const deletePromises = metadata.map(screenshot => 
-                fetch(`${this.apiBase}/delete-screenshot?url=${encodeURIComponent(screenshot.url)}`, {
-                    method: 'DELETE'
-                }).catch(console.warn) // Don't fail if some deletions fail
-            );
+            // Delete cloud-stored screenshots
+            const cloudDeletePromises = metadata
+                .filter(screenshot => screenshot.isCloudStored)
+                .map(screenshot => 
+                    fetch(`${this.apiBase}/delete-screenshot?url=${encodeURIComponent(screenshot.url)}`, {
+                        method: 'DELETE'
+                    }).catch(console.warn) // Don't fail if some deletions fail
+                );
             
-            await Promise.allSettled(deletePromises);
+            await Promise.allSettled(cloudDeletePromises);
             
             // Clear metadata
             localStorage.removeItem(`screenshots_metadata_${this.currentJobId}`);

@@ -1,22 +1,23 @@
 import { del } from '@vercel/blob';
-import { NextRequest, NextResponse } from 'next/server';
 
-export async function DELETE(request) {
+export default async function handler(request, response) {
+  if (request.method !== 'DELETE') {
+    return response.status(405).json({ error: 'Method not allowed' });
+  }
+
   try {
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(request.url, `http://${request.headers.host}`);
     const url = searchParams.get('url');
     
     if (!url) {
-      return NextResponse.json({ error: 'URL is required' }, { status: 400 });
+      return response.status(400).json({ error: 'URL is required' });
     }
     
     await del(url);
     
-    return NextResponse.json({ success: true });
+    return response.status(200).json({ success: true });
   } catch (error) {
     console.error('Delete error:', error);
-    return NextResponse.json({ error: 'Delete failed' }, { status: 500 });
+    return response.status(500).json({ error: 'Delete failed', details: error.message });
   }
 }
-
-export const runtime = 'edge';
