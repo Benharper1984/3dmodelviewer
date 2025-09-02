@@ -35,7 +35,7 @@
             border-radius: 15px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             text-align: center;
-            max-width: 500px;
+            max-width: 800px;
             margin: 0 auto;
         }
 
@@ -436,7 +436,13 @@
 
         @media (min-width: 769px) {
             .client-grid {
-                grid-template-columns: 1fr 1fr;
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 1024px) and (min-width: 769px) {
+            .client-grid {
+                grid-template-columns: repeat(2, 1fr);
             }
         }
     </style>
@@ -457,6 +463,11 @@
                 <div class="client-card" onclick="selectClient('the-favorite-neighbors', 'The Favorite Neighbors')">
                     <h3>The Favorite Neighbors</h3>
                     <p>View your custom project files</p>
+                </div>
+                
+                <div class="client-card" onclick="selectClient('feature-testing', 'Feature Testing Playground')">
+                    <h3>Feature Testing Playground</h3>
+                    <p>Test new features and experimental tools</p>
                 </div>
             </div>
         </div>
@@ -524,6 +535,11 @@
                 name: 'The Favorite Neighbors',
                 password: 'DeckinRear',
                 modelsPath: 'public/models/the-favorite-neighbors/'
+            },
+            'feature-testing': {
+                name: 'Feature Testing Playground',
+                password: 'testing123',
+                redirectTo: 'screenshot-test.html'
             }
         };
 
@@ -576,6 +592,12 @@
 
             const clientConfig = CLIENTS[currentClient];
             if (input.value === clientConfig.password) {
+                // Check if this client should redirect to another page
+                if (clientConfig.redirectTo) {
+                    window.location.href = clientConfig.redirectTo;
+                    return;
+                }
+                
                 document.getElementById('passwordContainer').style.display = 'none';
                 document.getElementById('viewerContainer').style.display = 'block';
                 document.getElementById('clientInfo').textContent = `Welcome, ${clientConfig.name}`;
