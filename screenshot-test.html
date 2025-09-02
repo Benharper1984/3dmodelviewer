@@ -59,43 +59,38 @@
             overflow: hidden;
         }
 
-        .file-upload-area {
-            border: 2px dashed #667eea;
-            border-radius: 8px;
-            padding: 30px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            background: #f8f9ff;
-            margin: 20px;
+        .viewer-header {
+            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
         }
 
-        .file-upload-area:hover {
-            border-color: #764ba2;
-            background: #f0f4ff;
+        .viewer-header h2 {
+            color: #333;
+            font-size: 20px;
+            font-weight: 300;
+            margin-bottom: 5px;
         }
 
-        .file-upload-area.dragover {
-            border-color: #764ba2;
-            background: #e8f0ff;
-            transform: scale(1.02);
-        }
-
-        .upload-icon {
-            font-size: 48px;
+        .model-version {
             color: #667eea;
-            margin-bottom: 15px;
-        }
-
-        .upload-text {
-            color: #666;
-            font-size: 16px;
+            font-size: 14px;
+            font-weight: 500;
             margin-bottom: 10px;
         }
 
-        .upload-subtext {
-            color: #999;
+        .version-input {
+            padding: 8px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
             font-size: 14px;
+            margin-left: 10px;
+            width: 200px;
+        }
+
+        .version-input:focus {
+            outline: none;
+            border-color: #667eea;
         }
 
         .file-input {
@@ -277,17 +272,75 @@
         }
 
         .screenshot-timestamp {
-            color: #666;
+            color: #999;
             font-size: 12px;
             margin-bottom: 10px;
         }
 
-        .comment-section {
-            border-top: 1px solid #e0e0e0;
-            padding-top: 10px;
+        .screenshot-metadata {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-size: 12px;
+            color: #666;
         }
 
-        .comment-input {
+        .model-version-info {
+            font-weight: 500;
+            color: #667eea;
+        }
+
+        .comment-section {
+            margin-top: 10px;
+        }
+
+        .comments-list {
+            margin-bottom: 15px;
+        }
+
+        .comment-item {
+            background: #f0f4ff;
+            padding: 10px;
+            border-radius: 6px;
+            border-left: 3px solid #667eea;
+            margin-bottom: 8px;
+            position: relative;
+        }
+
+        .comment-text {
+            color: #333;
+            font-size: 14px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            margin-bottom: 5px;
+        }
+
+        .comment-timestamp {
+            color: #999;
+            font-size: 11px;
+        }
+
+        .delete-comment-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            width: 20px;
+            height: 20px;
+            font-size: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .delete-comment-btn:hover {
+            background: #c82333;
+        }        .comment-input {
             width: 100%;
             padding: 10px;
             border: 1px solid #ddd;
@@ -443,18 +496,18 @@
         </div>
 
         <div class="viewer-container">
-            <div class="file-upload-area" onclick="document.getElementById('fileInput').click()">
-                <div class="upload-icon">📁</div>
-                <div class="upload-text">Upload a 3D model to test screenshots</div>
-                <div class="upload-subtext">Supports GLB and GLTF files</div>
-                <input type="file" id="fileInput" class="file-input" accept=".glb,.gltf" onchange="loadModel(this.files[0])">
+            <div class="viewer-header">
+                <h2>Current Design Model</h2>
+                <div class="model-version">
+                    Model Version: 
+                    <input type="text" id="modelVersion" class="version-input" placeholder="Enter version (e.g., v1.0, Draft-A)" value="v1.0">
+                </div>
             </div>
 
             <div class="model-viewer-container">
                 <model-viewer id="modelViewer"
                     camera-controls
                     touch-action="pan-y"
-                    auto-rotate
                     auto-rotate-delay="3000"
                     rotation-per-second="30deg"
                     environment-image="neutral"
@@ -476,7 +529,7 @@
 
             <div class="controls">
                 <button class="control-btn" onclick="resetCamera()">Reset Camera</button>
-                <button class="control-btn" id="autoRotateBtn" onclick="toggleAutoRotate()">Auto Rotate: ON</button>
+                <button class="control-btn active" id="autoRotateBtn" onclick="toggleAutoRotate()">Auto Rotate: OFF</button>
                 <button class="control-btn screenshot-btn" onclick="startScreenshot()">📸 Take Screenshot</button>
                 <div class="model-info" id="modelInfo">Upload a model to start testing</div>
             </div>
@@ -505,7 +558,7 @@
     <script>
         // Global variables
         let modelViewer;
-        let autoRotateEnabled = true;
+        let autoRotateEnabled = false;
         let isSelectingArea = false;
         let selectionStart = null;
         let selectionBox = null;
@@ -514,85 +567,25 @@
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', function() {
             modelViewer = document.getElementById('modelViewer');
-            setupDragAndDrop();
             setupKeyboardShortcuts();
-            loadTestModel();
+            loadCurrentDesign();
         });
 
-        // Load a test model automatically
-        function loadTestModel() {
-            // Try to load the existing model if available
-            const testModelPath = 'public/models/the-thoughtful-father/current-design.glb';
-            modelViewer.src = testModelPath;
+        // Load the current design model automatically
+        function loadCurrentDesign() {
+            // Load the current design model
+            const designModelPath = 'public/models/the-thoughtful-father/current-design.glb';
+            modelViewer.src = designModelPath;
             
             // Update model info
             const modelInfo = document.getElementById('modelInfo');
-            modelInfo.textContent = 'Test Model: Current Design';
+            modelInfo.textContent = 'Loaded: Current Design Model';
             
             // Handle loading errors
             modelViewer.addEventListener('error', function(e) {
-                console.log('Test model not found - upload your own to test');
-                document.getElementById('modelInfo').textContent = 'Upload a model to start testing';
+                console.log('Current design model not found');
+                document.getElementById('modelInfo').textContent = 'Current design model not available';
             }, { once: true });
-        }
-
-        // Drag and drop functionality
-        function setupDragAndDrop() {
-            const uploadArea = document.querySelector('.file-upload-area');
-
-            uploadArea.addEventListener('dragover', function(e) {
-                e.preventDefault();
-                uploadArea.classList.add('dragover');
-            });
-
-            uploadArea.addEventListener('dragleave', function(e) {
-                e.preventDefault();
-                uploadArea.classList.remove('dragover');
-            });
-
-            uploadArea.addEventListener('drop', function(e) {
-                e.preventDefault();
-                uploadArea.classList.remove('dragover');
-                
-                const files = e.dataTransfer.files;
-                if (files.length > 0) {
-                    loadModel(files[0]);
-                }
-            });
-        }
-
-        // Load 3D model
-        function loadModel(file) {
-            if (!file) return;
-
-            // Validate file type
-            const validExtensions = ['.glb', '.gltf'];
-            const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
-            
-            if (!validExtensions.includes(fileExtension)) {
-                alert('Please select a valid GLB or GLTF file.');
-                return;
-            }
-
-            // Create object URL and load model
-            const url = URL.createObjectURL(file);
-            modelViewer.src = url;
-
-            // Update model info
-            const modelInfo = document.getElementById('modelInfo');
-            modelInfo.textContent = `Loaded: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
-
-            // Clean up previous object URL
-            modelViewer.addEventListener('load', function cleanup() {
-                URL.revokeObjectURL(url);
-                modelViewer.removeEventListener('load', cleanup);
-            });
-
-            // Handle loading errors
-            modelViewer.addEventListener('error', function(e) {
-                alert('Error loading model. Please check the file format and try again.');
-                console.error('Model loading error:', e);
-            });
         }
 
         // Control functions
@@ -746,11 +739,14 @@
         }
 
         function saveScreenshot(dataURL) {
+            const modelVersion = document.getElementById('modelVersion').value || 'Unversioned';
+            
             const screenshot = {
                 id: Date.now(),
                 image: dataURL,
                 timestamp: new Date().toLocaleString(),
-                comment: ''
+                modelVersion: modelVersion,
+                comments: []
             };
             
             screenshots.push(screenshot);
@@ -770,42 +766,73 @@
             item.innerHTML = `
                 <img src="${screenshot.image}" alt="Screenshot" class="screenshot-preview" onclick="openModal('${screenshot.image}')">
                 <div class="screenshot-timestamp">${screenshot.timestamp}</div>
+                <div class="screenshot-metadata">
+                    <div class="model-version-info">Model Version: ${screenshot.modelVersion}</div>
+                </div>
                 <div class="comment-section">
+                    <div id="comments-list-${screenshot.id}" class="comments-list"></div>
                     <textarea class="comment-input" placeholder="Add a comment about this screenshot..." data-id="${screenshot.id}"></textarea>
                     <div class="comment-buttons">
-                        <button class="save-comment-btn" onclick="saveComment(${screenshot.id})">Save Comment</button>
-                        <button class="delete-screenshot-btn" onclick="deleteScreenshot(${screenshot.id})">Delete</button>
+                        <button class="save-comment-btn" onclick="addComment(${screenshot.id})">Add Comment</button>
+                        <button class="delete-screenshot-btn" onclick="deleteScreenshot(${screenshot.id})">Delete Screenshot</button>
                     </div>
-                    <div id="saved-comment-${screenshot.id}" class="saved-comment" style="display: none;"></div>
                 </div>
             `;
             
             container.appendChild(item);
         }
 
-        function saveComment(screenshotId) {
+        function addComment(screenshotId) {
             const input = document.querySelector(`[data-id="${screenshotId}"]`);
-            const comment = input.value.trim();
+            const commentText = input.value.trim();
             
-            if (!comment) {
+            if (!commentText) {
                 alert('Please enter a comment first!');
                 return;
             }
             
-            // Find and update screenshot
+            // Find screenshot and add comment
             const screenshot = screenshots.find(s => s.id === screenshotId);
             if (screenshot) {
-                screenshot.comment = comment;
+                const comment = {
+                    id: Date.now(),
+                    text: commentText,
+                    timestamp: new Date().toLocaleString()
+                };
                 
-                // Show saved comment
-                const savedCommentDiv = document.getElementById(`saved-comment-${screenshotId}`);
-                savedCommentDiv.textContent = comment;
-                savedCommentDiv.style.display = 'block';
+                screenshot.comments.push(comment);
+                displayComment(screenshotId, comment);
                 
                 // Clear input
                 input.value = '';
+            }
+        }
+
+        function displayComment(screenshotId, comment) {
+            const commentsList = document.getElementById(`comments-list-${screenshotId}`);
+            
+            const commentDiv = document.createElement('div');
+            commentDiv.className = 'comment-item';
+            commentDiv.innerHTML = `
+                <button class="delete-comment-btn" onclick="deleteComment(${screenshotId}, ${comment.id})" title="Delete comment">×</button>
+                <div class="comment-text">${comment.text}</div>
+                <div class="comment-timestamp">${comment.timestamp}</div>
+            `;
+            
+            commentsList.appendChild(commentDiv);
+        }
+
+        function deleteComment(screenshotId, commentId) {
+            if (confirm('Delete this comment?')) {
+                // Remove from screenshot data
+                const screenshot = screenshots.find(s => s.id === screenshotId);
+                if (screenshot) {
+                    screenshot.comments = screenshot.comments.filter(c => c.id !== commentId);
+                }
                 
-                alert('Comment saved!');
+                // Remove from DOM
+                const commentElement = event.target.closest('.comment-item');
+                commentElement.remove();
             }
         }
 

@@ -487,20 +487,12 @@
             <div class="viewer-header">
                 <h1>3D Model Viewer</h1>
                 <div id="clientInfo" class="client-info"></div>
-                
-                <div class="file-upload-area" onclick="document.getElementById('fileInput').click()">
-                    <div class="upload-icon">📁</div>
-                    <div class="upload-text">Upload your own 3D model</div>
-                    <div class="upload-subtext">Supports GLB and GLTF files</div>
-                    <input type="file" id="fileInput" class="file-input" accept=".glb,.gltf" onchange="loadModel(this.files[0])">
-                </div>
             </div>
 
             <div class="model-viewer-container">
                 <model-viewer id="modelViewer"
                     camera-controls
                     touch-action="pan-y"
-                    auto-rotate
                     auto-rotate-delay="3000"
                     rotation-per-second="30deg"
                     environment-image="neutral"
@@ -515,7 +507,7 @@
 
             <div class="controls">
                 <button class="control-btn" onclick="resetCamera()">Reset Camera</button>
-                <button class="control-btn" id="autoRotateBtn" onclick="toggleAutoRotate()">Auto Rotate: ON</button>
+                <button class="control-btn active" id="autoRotateBtn" onclick="toggleAutoRotate()">Auto Rotate: OFF</button>
                 <button class="control-btn" onclick="toggleWireframe()">Toggle Wireframe</button>
                 <div class="model-info" id="modelInfo">No model loaded</div>
                 <button class="control-btn logout-btn" onclick="logout()">Logout</button>
@@ -545,7 +537,7 @@
 
         // Global variables
         let currentClient = null;
-        let autoRotateEnabled = true;
+        let autoRotateEnabled = false;
         let modelViewer;
 
         // Initialize when page loads
