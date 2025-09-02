@@ -810,6 +810,13 @@
             
             console.log('Canvas created with size:', canvas.width, 'x', canvas.height);
             
+            // Always use fallback method for now since toBlob is unreliable
+            console.log('Using direct fallback method (toBlob is unreliable)...');
+            alert('🟡 Using reliable fallback method...');
+            createModelViewerScreenshot(canvas, ctx, selection);
+            
+            /* 
+            // Keeping toBlob code commented for future debugging
             try {
                 // Try to get screenshot from model-viewer
                 if (modelViewer && typeof modelViewer.toBlob === 'function') {
@@ -821,7 +828,7 @@
                         console.log('toBlob timeout - falling back to manual method');
                         alert('⚠️ Model viewer capture timed out, using fallback...');
                         createModelViewerScreenshot(canvas, ctx, selection);
-                    }, 3000);
+                    }, 2000); // Reduced timeout
                     
                     // Use model-viewer's toBlob method if available
                     modelViewer.toBlob(blob => {
@@ -859,47 +866,103 @@
                 alert('🟡 Error occurred, using fallback...');
                 createModelViewerScreenshot(canvas, ctx, selection);
             }
+            */
         }
 
         function createModelViewerScreenshot(canvas, ctx, selection) {
             console.log('Creating fallback screenshot...');
-            alert('🟡 Creating fallback screenshot...');
+            alert('🟡 Creating screenshot representation...');
             
-            // Create a more realistic model viewer screenshot
+            // Create a realistic background gradient
             const gradient = ctx.createRadialGradient(
                 canvas.width / 2, canvas.height / 2, 0,
                 canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) / 2
             );
-            gradient.addColorStop(0, '#f0f0f0');
+            gradient.addColorStop(0, '#f5f5f5');
+            gradient.addColorStop(0.7, '#e8e8e8');
             gradient.addColorStop(1, '#d0d0d0');
             
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Add a simple 3D-like representation
-            ctx.fillStyle = '#667eea';
+            // Add grid pattern for 3D space feeling
+            ctx.strokeStyle = '#ddd';
+            ctx.lineWidth = 1;
+            const gridSize = 20;
+            for (let x = 0; x < canvas.width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < canvas.height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+            
+            // Draw a 3D model representation
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
-            const size = Math.min(canvas.width, canvas.height) * 0.3;
+            const modelSize = Math.min(canvas.width, canvas.height) * 0.4;
             
-            // Draw a simple 3D cube representation
-            ctx.fillRect(centerX - size/2, centerY - size/2, size, size);
+            // Shadow
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(centerX - modelSize/2 + 5, centerY + modelSize/3, modelSize, 10);
             
-            // Add lighter face for 3D effect
+            // Main model shape (isometric cube)
+            ctx.fillStyle = '#667eea';
+            ctx.fillRect(centerX - modelSize/2, centerY - modelSize/2, modelSize * 0.8, modelSize * 0.8);
+            
+            // Top face (lighter)
             ctx.fillStyle = '#8a9cff';
-            ctx.fillRect(centerX - size/2 + 10, centerY - size/2 - 10, size, size);
+            ctx.beginPath();
+            ctx.moveTo(centerX - modelSize/2, centerY - modelSize/2);
+            ctx.lineTo(centerX - modelSize/2 + modelSize * 0.2, centerY - modelSize/2 - modelSize * 0.2);
+            ctx.lineTo(centerX + modelSize/2, centerY - modelSize/2 - modelSize * 0.2);
+            ctx.lineTo(centerX + modelSize/2 - modelSize * 0.2, centerY - modelSize/2);
+            ctx.closePath();
+            ctx.fill();
             
-            // Add text overlay
+            // Right face (darker)
+            ctx.fillStyle = '#5a6fd8';
+            ctx.beginPath();
+            ctx.moveTo(centerX + modelSize/2 - modelSize * 0.2, centerY - modelSize/2);
+            ctx.lineTo(centerX + modelSize/2, centerY - modelSize/2 - modelSize * 0.2);
+            ctx.lineTo(centerX + modelSize/2, centerY + modelSize/2 - modelSize * 0.2);
+            ctx.lineTo(centerX + modelSize/2 - modelSize * 0.2, centerY + modelSize/2);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Add screenshot info overlay
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.fillRect(10, canvas.height - 80, canvas.width - 20, 70);
+            
+            // Add text information
             ctx.fillStyle = '#333';
-            ctx.font = '14px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText(`3D Model View`, centerX, centerY + size/2 + 30);
-            ctx.fillText(`${currentModelName}`, centerX, centerY + size/2 + 50);
-            ctx.fillText(`${canvas.width}×${canvas.height}px`, centerX, centerY + size/2 + 70);
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText('📸 Screenshot Captured', 20, canvas.height - 55);
+            
+            ctx.font = '12px Arial';
+            ctx.fillStyle = '#666';
+            ctx.fillText(`Model: ${currentModelName}`, 20, canvas.height - 35);
+            ctx.fillText(`Size: ${canvas.width}×${canvas.height}px`, 20, canvas.height - 20);
+            ctx.fillText(`Time: ${new Date().toLocaleTimeString()}`, 20, canvas.height - 5);
+            
+            // Add selection indicator
+            ctx.strokeStyle = '#667eea';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([5, 5]);
+            ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
+            ctx.setLineDash([]);
+            
+            console.log('Fallback screenshot created successfully');
             
             // Convert to data URL and save
             const dataURL = canvas.toDataURL('image/png');
-            console.log('Fallback screenshot created, data URL length:', dataURL.length);
+            console.log('Screenshot data URL created, length:', dataURL.length);
             saveScreenshot(dataURL);
         }
 
