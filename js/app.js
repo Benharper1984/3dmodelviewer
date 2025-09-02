@@ -100,23 +100,23 @@ class App {
 let app;
 
 function startScreenshot() {
-    app.startScreenshot();
+    if (app) app.startScreenshot();
 }
 
 function resetCamera() {
-    app.resetCamera();
+    if (app) app.resetCamera();
 }
 
 function toggleAutoRotate() {
-    app.toggleAutoRotate();
+    if (app) app.toggleAutoRotate();
 }
 
 function clearAllScreenshots() {
-    app.clearAllScreenshots();
+    if (app) app.clearAllScreenshots();
 }
 
-// Initialize app when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
+// This will be called by the main HTML file
+function initializeApp() {
     app = new App();
     app.initialize();
-});
+}
