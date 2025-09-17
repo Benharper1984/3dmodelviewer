@@ -1,0 +1,34 @@
+{
+  "client1": {
+    "id": "client1",
+    "name": "Client 1",
+    "password": "client123",
+    "isActive": true,
+    "assignedModels": [],
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  },
+  "client2": {
+    "id": "client2",
+    "name": "Client 2",
+    "password": "design456",
+    "isActive": true,
+    "assignedModels": [],
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  },
+  "client3": {
+    "id": "client3",
+    "name": "Client 3",
+    "password": "build789",
+    "isActive": true,
+    "assignedModels": [],
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  },
+  "general": {
+    "id": "general",
+    "name": "General Viewer",
+    "password": "temp123",
+    "isActive": true,
+    "assignedModels": [],
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  }
+}
